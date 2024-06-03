@@ -72,12 +72,12 @@
 /* Start EthernetUDP socket, listening at local port PORT */
 uint8_t EthernetUDP::begin(uint16_t port)
 {
-  if (_sockindex < MAX_SOCK_NUM)
-    Ethernet.socketClose(_sockindex);
+  if (_sockIndex < MAX_SOCK_NUM)
+    EthernetDriver.socketClose(_sockIndex);
 
-  _sockindex = Ethernet.socketBegin(SnMR::UDP, port);
+  _sockIndex = EthernetDriver.socketBegin(SnMR::UDP, port);
 
-  if (_sockindex >= MAX_SOCK_NUM)
+  if (_sockIndex >= MAX_SOCK_NUM)
     return 0;
 
   _port = port;
@@ -100,10 +100,10 @@ int EthernetUDP::available()
 /* Release any resources being used by this EthernetUDP instance */
 void EthernetUDP::stop()
 {
-  if (_sockindex < MAX_SOCK_NUM)
+  if (_sockIndex < MAX_SOCK_NUM)
   {
-    Ethernet.socketClose(_sockindex);
-    _sockindex = MAX_SOCK_NUM;
+    EthernetDriver.socketClose(_sockIndex);
+    _sockIndex = MAX_SOCK_NUM;
   }
 }
 
@@ -116,7 +116,7 @@ int EthernetUDP::beginPacket(const char *host, uint16_t port)
   DNSClient dns;
   IPAddress remote_addr;
 
-  dns.begin(Ethernet.dnsServerIP());
+  dns.begin(EthernetDriver._dhcp->getDhcpServerIp());
   ret = dns.getHostByName(host, remote_addr);
 
   if (ret != 1)
@@ -133,14 +133,14 @@ int EthernetUDP::beginPacket(IPAddress ip, uint16_t port)
 
   ETG_LOGDEBUG("EthernetUDP:beginPacket");
 
-  return Ethernet.socketStartUDP(_sockindex, rawIPAddress(ip), port);
+  return EthernetDriver.socketStartUDP(_sockIndex, rawIPAddress(ip), port);
 }
 
 /////////////////////////////////////////////////////////
 
 int EthernetUDP::endPacket()
 {
-  return Ethernet.socketSendUDP(_sockindex);
+  return EthernetDriver.socketSendUDP(_sockIndex);
 }
 
 /////////////////////////////////////////////////////////
@@ -156,7 +156,7 @@ size_t EthernetUDP::write(const uint8_t *buffer, size_t size)
 {
   ETG_LOGDEBUG3("EthernetUDP:write, buffer =", (char *) buffer, ", size =", size);
 
-  uint16_t bytes_written = Ethernet.socketBufferData(_sockindex, _offset, buffer, size);
+  uint16_t bytes_written = EthernetDriver.socketBufferData(_sockIndex, _offset, buffer, size);
   _offset += bytes_written;
 
   return bytes_written;
@@ -179,7 +179,7 @@ int EthernetUDP::parsePacket()
 
 #if USING_W6100
 
-  if (Ethernet.socketRecvAvailable(_sockindex) > 0)
+  if (EthernetDriver.socketRecvAvailable(_sockIndex) > 0)
   {
     //HACK - hand-parse the UDP packet using TCP recv method
     uint8_t tmpBuf[20];
@@ -188,7 +188,7 @@ int EthernetUDP::parsePacket()
     if (W5100.getChip() == w6100)
     {
       //read 2 header bytes and get one IPv4 or IPv6
-      ret = Ethernet.socketRecv(_sockindex, tmpBuf, 2);
+      ret = EthernetDriver.socketRecv(_sockIndex, tmpBuf, 2);
 
       if (ret > 0)
       {
@@ -202,7 +202,7 @@ int EthernetUDP::parsePacket()
           // 18 19
 
           //read 16 header bytes and get IP and port from it
-          ret = Ethernet.socketRecv(_sockindex, &tmpBuf[2], 18);
+          ret = EthernetDriver.socketRecv(_sockIndex, &tmpBuf[2], 18);
           _remoteIP = &tmpBuf[2];
           _remotePort = (tmpBuf[18] << 8) | tmpBuf[19];
         }
@@ -214,7 +214,7 @@ int EthernetUDP::parsePacket()
           // 6 7
 
           //read 6 header bytes and get IP and port from it
-          ret = Ethernet.socketRecv(_sockindex, &tmpBuf[2], 6);
+          ret = EthernetDriver.socketRecv(_sockIndex, &tmpBuf[2], 6);
           _remoteIP = &tmpBuf[2];
           _remotePort = (tmpBuf[6] << 8) | tmpBuf[7];
         }
@@ -225,7 +225,7 @@ int EthernetUDP::parsePacket()
     else
     {
       //read 8 header bytes and get IP and port from it
-      ret = Ethernet.socketRecv(_sockindex, tmpBuf, 8);
+      ret = EthernetDriver.socketRecv(_sockIndex, tmpBuf, 8);
 
       if (ret > 0)
       {
@@ -247,14 +247,14 @@ int EthernetUDP::parsePacket()
 
 #else   // USING_W6100
 
-  if (Ethernet.socketRecvAvailable(_sockindex) > 0)
+  if (EthernetDriver.socketRecvAvailable(_sockIndex) > 0)
   {
     //HACK - hand-parse the UDP packet using TCP recv method
     uint8_t tmpBuf[8];
     int ret;
 
     //read 8 header bytes and get IP and port from it
-    ret = Ethernet.socketRecv(_sockindex, tmpBuf, 8);
+    ret = EthernetDriver.socketRecv(_sockIndex, tmpBuf, 8);
 
     if (ret > 0)
     {
@@ -283,7 +283,7 @@ int EthernetUDP::read()
 {
   uint8_t byte;
 
-  if ((_remaining > 0) && (Ethernet.socketRecv(_sockindex, &byte, 1) > 0))
+  if ((_remaining > 0) && (EthernetDriver.socketRecv(_sockIndex, &byte, 1) > 0))
   {
     // We read things without any problems
     _remaining--;
@@ -306,13 +306,13 @@ int EthernetUDP::read(unsigned char *buffer, size_t len)
     if (_remaining <= len)
     {
       // data should fit in the buffer
-      got = Ethernet.socketRecv(_sockindex, buffer, _remaining);
+      got = EthernetDriver.socketRecv(_sockIndex, buffer, _remaining);
     }
     else
     {
       // too much data for the buffer,
       // grab as much as will fit
-      got = Ethernet.socketRecv(_sockindex, buffer, len);
+      got = EthernetDriver.socketRecv(_sockIndex, buffer, len);
     }
 
     if (got > 0)
@@ -336,10 +336,10 @@ int EthernetUDP::peek()
   // Unlike recv, peek doesn't check to see if there's any data available, so we must.
   // If the user hasn't called parsePacket yet then return nothing otherwise they
   // may get the UDP header
-  if (_sockindex >= MAX_SOCK_NUM || _remaining == 0)
+  if (_sockIndex >= MAX_SOCK_NUM || _remaining == 0)
     return -1;
 
-  return Ethernet.socketPeek(_sockindex);
+  return EthernetDriver.socketPeek(_sockIndex);
 }
 
 /////////////////////////////////////////////////////////
@@ -354,12 +354,12 @@ void EthernetUDP::flush()
 /* Start EthernetUDP socket, listening at local port PORT */
 uint8_t EthernetUDP::beginMulticast(IPAddress ip, uint16_t port)
 {
-  if (_sockindex < MAX_SOCK_NUM)
-    Ethernet.socketClose(_sockindex);
+  if (_sockIndex < MAX_SOCK_NUM)
+    EthernetDriver.socketClose(_sockIndex);
 
-  _sockindex = Ethernet.socketBeginMulticast(SnMR::UDP | SnMR::MULTI, ip, port);
+  _sockIndex = EthernetDriver.socketBeginMulticast(SnMR::UDP | SnMR::MULTI, ip, port);
 
-  if (_sockindex >= MAX_SOCK_NUM)
+  if (_sockIndex >= MAX_SOCK_NUM)
     return 0;
 
   _port = port;

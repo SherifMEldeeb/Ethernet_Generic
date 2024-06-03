@@ -65,22 +65,6 @@
 
 ////////////////////////////////////////
 
-#if (USING_SPI2 || USING_CUSTOM_SPI)
-  #define ETHERNET_GENERIC_USING_SPI2     true
-
-  #if(_ETG_LOGLEVEL_> 3)
-    #warning ETHERNET_GENERIC_USING_SPI2 in Ethernet_Generic.h
-  #endif
-#else
-  #define ETHERNET_GENERIC_USING_SPI2     false
-
-  #if(_ETG_LOGLEVEL_> 3)
-    #warning ETHERNET_GENERIC_USING_SPI in Ethernet_Generic.h
-  #endif
-#endif
-
-////////////////////////////////////////
-
 #include "Ethernet_Generic.hpp"
 #include "Ethernet_Generic_Impl.h"
 

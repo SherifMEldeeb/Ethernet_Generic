@@ -40,7 +40,7 @@
   ...
   2.6.0   K Hoang      11/09/2022 Add support to AVR Dx (AVR128Dx, AVR64Dx, AVR32Dx, etc.) using DxCore
   2.6.1   K Hoang      23/09/2022 Fix bug for W5200
-  2.6.2   K Hoang      26/10/2022 Add support to Seeed XIAO_NRF52840 and XIAO_NRF52840_SENSE using `mbed` or `nRF52` core
+  2.6.2   K Hoang      26/10/2022 Add support to Seed XIAO_NRF52840 and XIAO_NRF52840_SENSE using `mbed` or `nRF52` core
   2.7.0   K Hoang      14/11/2022 Fix severe limitation to permit sending larger data than 2/4/8/16K buffer
   2.7.1   K Hoang      15/11/2022 Auto-detect W5x00 and settings to set MAX_SIZE to send
   2.8.0   K Hoang      27/12/2022 Add support to W6100 using IPv4
@@ -109,7 +109,7 @@ int DhcpClass::request_DHCP_lease()
     return 0;
   }
 
-  presend_DHCP();
+  preSend_DHCP();
 
   int result = 0;
 
@@ -204,7 +204,7 @@ int DhcpClass::request_DHCP_lease()
 
 ////////////////////////////////////////
 
-void DhcpClass::presend_DHCP()
+void DhcpClass::preSend_DHCP()
 {
 }
 
@@ -388,7 +388,7 @@ uint8_t DhcpClass::parseDHCPResponse(unsigned long responseTimeout, uint32_t& tr
 
     // Skip to the option part
     // From Ethernet2
-    // Doing this a byte at a time so we don't have to put a big buffer
+    // Doing this a byte at a time, so we don't have to put a big buffer
     // on the stack (as we don't have lots of memory lying around)
     for (int i = 0; i < (240 - (int) sizeof(RIP_MSG_FIXED)); i++)
     {
@@ -448,9 +448,9 @@ uint8_t DhcpClass::parseDHCPResponse(unsigned long responseTimeout, uint32_t& tr
         // From Ethernet2
         case domainName :
           opt_len = _dhcpUdpSocket.read();
-          _dhcpDnsdomainName = (char*)malloc(sizeof(char) * opt_len + 1);
-          _dhcpUdpSocket.read(_dhcpDnsdomainName, opt_len);
-          _dhcpDnsdomainName[opt_len] = '\0';
+          _dhcpDnsDomainName = (char*)malloc(sizeof(char) * opt_len + 1);
+          _dhcpUdpSocket.read(_dhcpDnsDomainName, opt_len);
+          _dhcpDnsDomainName[opt_len] = '\0';
           break;
 
         case hostName :
@@ -535,7 +535,7 @@ int DhcpClass::checkLease()
   unsigned long now = millis();
   unsigned long elapsed = now - _lastCheckLeaseMillis;
 
-  // if more then one sec passed, reduce the counters accordingly
+  // if more than one sec passed, reduce the counters accordingly
   if (elapsed >= 1000)
   {
     // set the new timestamps

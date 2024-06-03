@@ -93,7 +93,7 @@ void setup()
   // ESP32 => GPIO2,4,5,13,15,21,22 OK with Ethernet, Ethernet2, EthernetLarge
   // ESP32 => GPIO2,4,5,15,21,22 OK with Ethernet3
 
-  //Ethernet.setCsPin (USE_THIS_SS_PIN);
+  Ethernet.setCsPin (USE_THIS_SS_PIN);
   Ethernet.init (USE_THIS_SS_PIN);
 
 #elif ETHERNET_USE_RPIPICO

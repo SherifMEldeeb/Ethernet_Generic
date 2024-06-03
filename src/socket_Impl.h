@@ -459,18 +459,18 @@ int EthernetClass::socketRecv(uint8_t s, uint8_t *buf, int16_t len)
   {
     // No data available.
     uint8_t status = W5100.readSnSR(s);
-
-    if ( status == SnSR::LISTEN || status == SnSR::CLOSED || status == SnSR::CLOSE_WAIT )
-    {
-      // The remote end has closed its side of the connection,
-      // so this is the eof state
+    //TODO:- Check if always return 0 is problematic later.
       ret = 0;
-    }
-    else
-    {
-      // The connection is still up, but there's no data waiting to be read
-      ret = -1;
-    }
+//    if ( status == SnSR::LISTEN || status == SnSR::CLOSED || status == SnSR::CLOSE_WAIT )
+//    {
+//      // The remote end has closed its side of the connection,
+//      // so this is the eof state
+//    }
+//    else
+//    {
+//      // The connection is still up, but there's no data waiting to be read
+//      ret = -1;
+//    }
   }
   else
   {

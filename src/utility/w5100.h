@@ -220,8 +220,10 @@ enum W5100Linkstatus
 class W5100Class
 {
   public:
-    // KH
-    uint8_t init(uint8_t socketNumbers = MAX_SOCK_NUM, uint8_t new_ss_pin = 10);
+    /// Intialize Driver with module
+    /// \param socketNumbers number of concurrent connections.
+    /// \return Weather the chip is connected or not.
+    uint8_t init(uint8_t socketNumbers = MAX_SOCK_NUM);
 
     ////////////////////////////////////////
 
@@ -927,6 +929,18 @@ class W5100Class
     const char* duplexReport();    // returns duplex mode as a string
 
     ////////////////////////////////////////
+
+    static inline void setSPIDriver(SPIClass* newDriver, int8_t sck, int8_t miso, int8_t mosi, int8_t ss)
+    {
+        resetSS();
+        if (pCUR_SPI)
+            pCUR_SPI ->end();
+        pCUR_SPI = newDriver;
+        ss_pin = ss;
+        pCUR_SPI->begin(sck, miso, mosi, ss);
+        initSS();
+        resetSS();
+    }
 
     static inline void beginSPITransaction()
     {

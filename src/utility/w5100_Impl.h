@@ -263,7 +263,7 @@ W5100Class W5100;
     #warning ETHERNET_GENERIC_USING_SPI in w5100_Impl.h
   #endif
 
-  SPIClass* pCUR_SPI = &SPI;
+  SPIClass* pCUR_SPI = nullptr;
 #endif
 
 ////////////////////////////////////////
@@ -300,7 +300,7 @@ W5100Class W5100;
 
 ////////////////////////////////////////
 
-uint8_t W5100Class::init(uint8_t socketNumbers, uint8_t new_ss_pin)
+uint8_t W5100Class::init(uint8_t socketNumbers)
 {
   (void) socketNumbers;
 
@@ -321,15 +321,18 @@ uint8_t W5100Class::init(uint8_t socketNumbers, uint8_t new_ss_pin)
 
   //ETG_LOGWARN5("W5100 init, using SS_PIN_DEFAULT =", SS_PIN_DEFAULT, ", new ss_pin = ", new_ss_pin,
   //              ", W5100Class::ss_pin = ", W5100Class::ss_pin);
-  ETG_LOGWARN5("W5100 init, using W5100Class::ss_pin = ", W5100Class::ss_pin, ", whereas new ss_pin = ", new_ss_pin,
-               ", SS_PIN_DEFAULT =", SS_PIN_DEFAULT);
+  ETG_LOGWARN3("W5100 init, using W5100Class::ss_pin = ", W5100Class::ss_pin, ", SS_PIN_DEFAULT =", SS_PIN_DEFAULT);
 
   CH_SIZE = 0x0100; // Default except W6100
 
-  pCUR_SPI->begin();
-
   initSS();
   resetSS();
+
+  if (!pCUR_SPI)
+      pCUR_SPI = &SPI;
+
+  pCUR_SPI->begin();
+
 
   // Removed from v2.6.1 for W5200. Tested OK with W5500, W5100S, W5100
   // Check https://github.com/khoih-prog/Ethernet_Generic/discussions/13
@@ -1156,11 +1159,15 @@ uint16_t W5100Class::write(uint16_t addr, const uint8_t *buf, uint16_t len)
 uint16_t W5100Class::read(uint16_t addr, uint8_t *buf, uint16_t len)
 {
   uint8_t cmd[4];
+    if (loopTaskWDTEnabled)
+        feedLoopWDT();
 
   if ( (chip == w5100))
   {
     for (uint16_t i = 0; i < len; i++)
     {
+        if (loopTaskWDTEnabled)
+            feedLoopWDT();
       setSS();
 
       pCUR_SPI->transfer(0x0F);

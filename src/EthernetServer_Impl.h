@@ -40,7 +40,7 @@
   ...
   2.6.0   K Hoang      11/09/2022 Add support to AVR Dx (AVR128Dx, AVR64Dx, AVR32Dx, etc.) using DxCore
   2.6.1   K Hoang      23/09/2022 Fix bug for W5200
-  2.6.2   K Hoang      26/10/2022 Add support to Seeed XIAO_NRF52840 and XIAO_NRF52840_SENSE using `mbed` or `nRF52` core
+  2.6.2   K Hoang      26/10/2022 Add support to Seed XIAO_NRF52840 and XIAO_NRF52840_SENSE using `mbed` or `nRF52` core
   2.7.0   K Hoang      14/11/2022 Fix severe limitation to permit sending larger data than 2/4/8/16K buffer
   2.7.1   K Hoang      15/11/2022 Auto-detect W5x00 and settings to set MAX_SIZE to send
   2.8.0   K Hoang      27/12/2022 Add support to W6100 using IPv4
@@ -63,17 +63,17 @@ uint16_t EthernetServer::server_port[MAX_SOCK_NUM];
 
 void EthernetServer::begin()
 {
-  uint8_t sockindex = Ethernet.socketBegin(SnMR::TCP, _port);
+  uint8_t sockIndex = EthernetDriver.socketBegin(SnMR::TCP, _port);
 
-  if (sockindex < MAX_SOCK_NUM)
+  if (sockIndex < MAX_SOCK_NUM)
   {
-    if (Ethernet.socketListen(sockindex))
+    if (EthernetDriver.socketListen(sockIndex))
     {
-      server_port[sockindex] = _port;
+      server_port[sockIndex] = _port;
     }
     else
     {
-      Ethernet.socketDisconnect(sockindex);
+      EthernetDriver.socketDisconnect(sockIndex);
     }
   }
 }
@@ -83,9 +83,9 @@ void EthernetServer::begin()
 EthernetClient EthernetServer::available()
 {
   bool listening = false;
-  uint8_t sockindex = MAX_SOCK_NUM;
+  uint8_t sockIndex = MAX_SOCK_NUM;
   EthernetChip_t chip;
-  uint8_t maxindex = MAX_SOCK_NUM;
+  uint8_t maxIndex = MAX_SOCK_NUM;
 
   chip = W5100.getChip();
 
@@ -95,28 +95,28 @@ EthernetClient EthernetServer::available()
 #if MAX_SOCK_NUM > 4
 
   if ( (chip == w5100) || (chip == w5100s) )
-    maxindex = 4; // W5100/W5100S chip never supports more than 4 sockets
+    maxIndex = 4; // W5100/W5100S chip never supports more than 4 sockets
 
 #endif
 
-  for (uint8_t i = 0; i < maxindex; i++)
+  for (uint8_t i = 0; i < maxIndex; i++)
   {
     if (server_port[i] == _port)
     {
-      uint8_t stat = Ethernet.socketStatus(i);
+      uint8_t stat = EthernetDriver.socketStatus(i);
 
       if (stat == SnSR::ESTABLISHED || stat == SnSR::CLOSE_WAIT)
       {
-        if (Ethernet.socketRecvAvailable(i) > 0)
+        if (EthernetDriver.socketRecvAvailable(i) > 0)
         {
-          sockindex = i;
+          sockIndex = i;
         }
         else
         {
           // remote host closed connection, our end still open
           if (stat == SnSR::CLOSE_WAIT)
           {
-            Ethernet.socketDisconnect(i);
+            EthernetDriver.socketDisconnect(i);
             // status becomes LAST_ACK for short time
           }
         }
@@ -135,7 +135,7 @@ EthernetClient EthernetServer::available()
   if (!listening)
     begin();
 
-  return EthernetClient(sockindex);
+  return EthernetClient(sockIndex);
 }
 
 ////////////////////////////////////////
@@ -143,9 +143,9 @@ EthernetClient EthernetServer::available()
 EthernetClient EthernetServer::accept()
 {
   bool listening = false;
-  uint8_t sockindex = MAX_SOCK_NUM;
+  uint8_t sockIndex = MAX_SOCK_NUM;
   EthernetChip_t chip;
-  uint8_t maxindex = MAX_SOCK_NUM;
+  uint8_t maxIndex = MAX_SOCK_NUM;
 
   chip = W5100.getChip();
 
@@ -155,22 +155,22 @@ EthernetClient EthernetServer::accept()
 #if MAX_SOCK_NUM > 4
 
   if ( (chip == w5100) || (chip == w5100s) )
-    maxindex = 4; // W5100 chip never supports more than 4 sockets
+    maxIndex = 4; // W5100 chip never supports more than 4 sockets
 
 #endif
 
-  for (uint8_t i = 0; i < maxindex; i++)
+  for (uint8_t i = 0; i < maxIndex; i++)
   {
     if (server_port[i] == _port)
     {
-      uint8_t stat = Ethernet.socketStatus(i);
+      uint8_t stat = EthernetDriver.socketStatus(i);
 
-      if (sockindex == MAX_SOCK_NUM && (stat == SnSR::ESTABLISHED || stat == SnSR::CLOSE_WAIT))
+      if (sockIndex == MAX_SOCK_NUM && (stat == SnSR::ESTABLISHED || stat == SnSR::CLOSE_WAIT))
       {
         // Return the connected client even if no data received.
         // Some protocols like FTP expect the server to send the
         // first data.
-        sockindex = i;
+        sockIndex = i;
         server_port[i] = 0; // only return the client once
       }
       else if (stat == SnSR::LISTEN)
@@ -187,14 +187,14 @@ EthernetClient EthernetServer::accept()
   if (!listening)
     begin();
 
-  return EthernetClient(sockindex);
+  return EthernetClient(sockIndex);
 }
 
 ////////////////////////////////////////
 
 EthernetServer::operator bool()
 {
-  uint8_t maxindex = MAX_SOCK_NUM;
+  uint8_t maxIndex = MAX_SOCK_NUM;
 
 #if MAX_SOCK_NUM > 4
   EthernetChip_t chip;
@@ -202,15 +202,15 @@ EthernetServer::operator bool()
   chip = W5100.getChip();
 
   if ( (chip == w5100) || (chip == w5100s) )
-    maxindex = 4; // W5100/W5100S chip never supports more than 4 sockets
+    maxIndex = 4; // W5100/W5100S chip never supports more than 4 sockets
 
 #endif
 
-  for (uint8_t i = 0; i < maxindex; i++)
+  for (uint8_t i = 0; i < maxIndex; i++)
   {
     if (server_port[i] == _port)
     {
-      if (Ethernet.socketStatus(i) == SnSR::LISTEN)
+      if (EthernetDriver.socketStatus(i) == SnSR::LISTEN)
       {
         return true; // server is listening for incoming clients
       }
@@ -222,14 +222,14 @@ EthernetServer::operator bool()
 
 ////////////////////////////////////////
 
-void EthernetServer::statusreport()
+void EthernetServer::statusReport()
 {
   ETG_LOGDEBUG1("EthernetServer, port =", _port);
 
   for (uint8_t i = 0; i < MAX_SOCK_NUM; i++)
   {
     uint16_t port = server_port[i];
-    uint8_t stat = Ethernet.socketStatus(i);
+    uint8_t stat = EthernetDriver.socketStatus(i);
     const char *name;
 
     switch (stat)
@@ -298,7 +298,7 @@ void EthernetServer::statusreport()
         name = "???";
     }
 
-    int avail = Ethernet.socketRecvAvailable(i);
+    int avail = EthernetDriver.socketRecvAvailable(i);
 
     ETG_LOGDEBUG3("index =", i, ", port= =", port);
     ETG_LOGDEBUG3("status =", name, ", avail =", avail);
@@ -321,7 +321,7 @@ size_t EthernetServer::write(uint8_t b)
 ////////////////////////////////////////
 
 // Private function
-size_t EthernetServer::_write(const uint8_t sockindex, const uint8_t *buf, size_t size)
+size_t EthernetServer::_write(const uint8_t sockIndex, const uint8_t *buf, size_t size)
 {
   int written = 0;
   int retry = ETHERNET_SERVER_MAX_WRITE_RETRY;
@@ -345,7 +345,7 @@ size_t EthernetServer::_write(const uint8_t sockindex, const uint8_t *buf, size_
 
   while (retry)
   {
-    written =  Ethernet.socketSend(sockindex, buf, min(bytesRemaining, (size_t) ETHERNET_SERVER_SEND_MAX_SIZE) );
+    written =  EthernetDriver.socketSend(sockIndex, buf, min(bytesRemaining, (size_t) ETHERNET_SERVER_SEND_MAX_SIZE) );
 
     if (written > 0)
     {
@@ -392,7 +392,7 @@ size_t EthernetServer::_write(const uint8_t sockindex, const uint8_t *buf, size_
 size_t EthernetServer::write(const uint8_t *buffer, size_t size)
 {
   EthernetChip_t chip;
-  uint8_t maxindex = MAX_SOCK_NUM;
+  uint8_t maxIndex = MAX_SOCK_NUM;
 
   chip = W5100.getChip();
 
@@ -402,19 +402,19 @@ size_t EthernetServer::write(const uint8_t *buffer, size_t size)
 #if MAX_SOCK_NUM > 4
 
   if ( (chip == w5100) || (chip == w5100s) )
-    maxindex = 4; // W5100/W5100S chip never supports more than 4 sockets
+    maxIndex = 4; // W5100/W5100S chip never supports more than 4 sockets
 
 #endif
 
   available();
 
-  for (uint8_t i = 0; i < maxindex; i++)
+  for (uint8_t i = 0; i < maxIndex; i++)
   {
     if (server_port[i] == _port)
     {
-      if (Ethernet.socketStatus(i) == SnSR::ESTABLISHED)
+      if (EthernetDriver.socketStatus(i) == SnSR::ESTABLISHED)
       {
-        //Ethernet.socketSend(i, buffer, size);
+        //EthernetDriver.socketSend(i, buffer, size);
         _write(i, buffer, size);
       }
     }
